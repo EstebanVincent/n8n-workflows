@@ -1,5 +1,7 @@
 # In n8n this is the input to the node:
 # data = _input.all()[0].json
+# import pyodide_js
+# await pyodide_js.loadPackage('tzdata')
 
 # outside n8n, load from a file for testing:
 import json
@@ -8,8 +10,9 @@ with open("workflows/lastfm/input.json", "r", encoding="utf-8") as f:
     data = json.load(f)
 
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List
+from zoneinfo import ZoneInfo
 
 
 def norm(x: Any) -> str:
@@ -134,12 +137,19 @@ for name, items, formatter in [
         ]
         fields.append({"name": name, "value": "\n".join(lines), "inline": False})
 
+
+today = datetime.now(ZoneInfo("Europe/Paris")).date()
+start_date = today - timedelta(days=7)
+date_range = f"{start_date.isoformat()} → {today.isoformat()}"
+
+
 # Create embeds
 summary_embed = {
     "title": "Weekly Last.fm Report",
     "description": summary,
     "color": 3447003,
     "fields": [f for f in fields if f["name"] == "Activity"],
+    "footer": {"text": f"{date_range}"},
 }
 
 
