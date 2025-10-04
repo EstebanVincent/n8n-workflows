@@ -17,8 +17,6 @@ def norm(x: Any) -> str:
 
 
 def first_image(images: Any) -> str | None:
-    if not isinstance(images, list):
-        return None
     order = ["extralarge", "large", "medium", "small"]
     by_size = {norm(img.get("size")): norm(img.get("#text")) for img in images}
     for s in order:
@@ -147,34 +145,34 @@ def create_list_embed(title: str, field_name: str) -> dict | None:
                     {"name": field_name, "value": field["value"], "inline": False}
                 ],
             }
-            # Find a thumbnail
+            # Find a thumbnail from the original track data
             list_thumb_url = None
             if field_name == "Top Artists" and artist_counter:
                 top_list_artist = artist_counter[0][0]
-                for row in reversed(rows):
-                    if row["artist"] == top_list_artist and row.get("image"):
-                        list_thumb_url = row["image"]
-                        break
+                for api_track in data.get("recenttracks").get("track", []):
+                    artist_name = norm((api_track.get("artist") or {}).get("#text"))
+                    if artist_name == top_list_artist:
+                        list_thumb_url = first_image(api_track.get("image"))
+                        if list_thumb_url:
+                            break
             elif field_name == "Top Albums" and album_counter:
                 top_list_artist, top_album = album_counter[0][0]
-                for row in reversed(rows):
-                    if (
-                        row["artist"] == top_list_artist
-                        and row["album"] == top_album
-                        and row.get("image")
-                    ):
-                        list_thumb_url = row["image"]
-                        break
+                for api_track in data.get("recenttracks").get("track", []):
+                    artist_name = norm((api_track.get("artist") or {}).get("#text"))
+                    album_name = norm((api_track.get("album") or {}).get("#text"))
+                    if artist_name == top_list_artist and album_name == top_album:
+                        list_thumb_url = first_image(api_track.get("image"))
+                        if list_thumb_url:
+                            break
             elif field_name == "Top Tracks" and track_counter:
                 top_list_artist, top_track = track_counter[0][0]
-                for row in reversed(rows):
-                    if (
-                        row["artist"] == top_list_artist
-                        and row["track"] == top_track
-                        and row.get("image")
-                    ):
-                        list_thumb_url = row["image"]
-                        break
+                for api_track in data.get("recenttracks").get("track", []):
+                    artist_name = norm((api_track.get("artist") or {}).get("#text"))
+                    track_name = norm(api_track.get("name"))
+                    if artist_name == top_list_artist and track_name == top_track:
+                        list_thumb_url = first_image(api_track.get("image"))
+                        if list_thumb_url:
+                            break
 
             if list_thumb_url:
                 embed["thumbnail"] = {"url": list_thumb_url}
