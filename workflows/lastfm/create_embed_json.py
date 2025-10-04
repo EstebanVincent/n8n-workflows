@@ -90,6 +90,7 @@ for tr in data.get("recenttracks", {}).get("track", []):
 total_scrobbles = len(rows)
 unique_tracks = len({(r["artist"], r["track"]) for r in rows})
 unique_artists = len({r["artist"] for r in rows})
+unique_albums = len({r["album"] for r in rows})
 track_counter = Counter((r["artist"], r["track"]) for r in rows).most_common(5)
 artist_counter = Counter(r["artist"] for r in rows).most_common(5)
 album_counter = Counter(
@@ -99,7 +100,7 @@ album_counter = Counter(
 # Build fields
 fields = []
 summary = (
-    f"**{total_scrobbles}** scrobbles · **{unique_tracks}** unique tracks · **{unique_artists}** unique artists"
+    f"**{total_scrobbles}** scrobbles · **{unique_tracks}** Tracks · **{unique_artists}** Artists · **{unique_albums}** Albums"
     if total_scrobbles
     else "No scrobbles this week."
 )
@@ -135,60 +136,80 @@ for name, items, formatter in [
 
 # Create embeds
 summary_embed = {
-    "title": "🎧 Weekly Last.fm Report",
+    "title": "Weekly Last.fm Report",
     "description": summary,
     "color": 3447003,
     "fields": [f for f in fields if f["name"] == "Activity"],
 }
 
-if thumb := find_thumbnail(
-    rows, artist=artist_counter[0][0] if artist_counter else None
-):
-    summary_embed["thumbnail"] = thumb
 
-
-def create_list_embed(
-    title: str,
-    field_name: str,
-    artist: str = None,
-    album: str = None,
-    track: str = None,
-) -> dict | None:
-    """Create an embed for a specific top list."""
-    field = next((f for f in fields if f["name"] == field_name), None)
-    if not field:
+def create_artist_embed(items: list, thumb_artist: str = None) -> dict | None:
+    """Create embed for top artists with individual fields."""
+    if not items:
         return None
 
     embed = {
-        "title": title,
+        "title": "Top Artists",
         "color": 3447003,
-        "fields": [{"name": field_name, "value": field["value"], "inline": False}],
+        "fields": [
+            {"name": artist, "value": f"{count} scrobbles", "inline": False}
+            for artist, count in items
+        ],
     }
 
-    if thumb := find_thumbnail(rows, artist, album, track):
-        embed["thumbnail"] = thumb
+    if thumb := find_thumbnail(rows, artist=thumb_artist):
+        embed["image"] = thumb
+
+    return embed
+
+
+def create_track_album_embed(
+    title: str,
+    items: list,
+    thumb_artist: str = None,
+    thumb_album: str = None,
+    thumb_track: str = None,
+) -> dict | None:
+    """Create embed for tracks/albums with individual fields."""
+    if not items:
+        return None
+
+    embed = {"title": title, "color": 3447003, "fields": []}
+
+    for (artist, name), count in items:
+        embed["fields"].append(
+            {
+                "name": name,
+                "value": f"{artist}\n{count} scrobbles",
+                "inline": False,
+            }
+        )
+
+    if thumb := find_thumbnail(
+        rows, artist=thumb_artist, album=thumb_album, track=thumb_track
+    ):
+        embed["image"] = thumb
 
     return embed
 
 
 output = {
     "summary_embed": summary_embed,
-    "track_embed": create_list_embed(
+    "track_embed": create_track_album_embed(
         "Top Tracks",
-        "Top Tracks",
-        artist=track_counter[0][0][0] if track_counter else None,
-        track=track_counter[0][0][1] if track_counter else None,
+        track_counter,
+        thumb_artist=track_counter[0][0][0] if track_counter else None,
+        thumb_track=track_counter[0][0][1] if track_counter else None,
     ),
-    "album_embed": create_list_embed(
+    "album_embed": create_track_album_embed(
         "Top Albums",
-        "Top Albums",
-        artist=album_counter[0][0][0] if album_counter else None,
-        album=album_counter[0][0][1] if album_counter else None,
+        album_counter,
+        thumb_artist=album_counter[0][0][0] if album_counter else None,
+        thumb_album=album_counter[0][0][1] if album_counter else None,
     ),
-    "artist_embed": create_list_embed(
-        "Top Artists",
-        "Top Artists",
-        artist=artist_counter[0][0] if artist_counter else None,
+    "artist_embed": create_artist_embed(
+        artist_counter,
+        thumb_artist=artist_counter[0][0] if artist_counter else None,
     ),
 }
 
