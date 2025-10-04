@@ -17,17 +17,40 @@ def norm(x: Any) -> str:
 
 
 def first_image(images: Any) -> str | None:
-    order = ["extralarge", "large", "medium", "small"]
-    by_size = {norm(img.get("size")): norm(img.get("#text")) for img in images}
-    for s in order:
-        u = by_size.get(s)
-        if u:
-            return u
+    """Extract the best available image URL from a list of images."""
+    if not images:
+        return None
+
+    # Convert images to list of dicts if needed (for n8n compatibility)
+    images_list = []
     for img in images:
-        u = norm(img.get("#text"))
-        if u:
-            return u
-    return None
+        if isinstance(img, dict):
+            images_list.append(img)
+        else:
+            # Handle n8n JsProxy objects by using to_py() method
+            try:
+                converted = img.to_py() if hasattr(img, "to_py") else {}
+                images_list.append(converted)
+            except Exception:
+                images_list.append({})
+
+    by_size = {
+        norm(img.get("size", "")): norm(img.get("#text", "")) for img in images_list
+    }
+
+    for size in ["extralarge", "large", "medium", "small"]:
+        if url := by_size.get(size):
+            return url
+
+    fallback = next(
+        (
+            norm(img.get("#text", ""))
+            for img in images_list
+            if norm(img.get("#text", ""))
+        ),
+        None,
+    )
+    return fallback
 
 
 # Gather weekly tracks from all inputs; ignore "now playing"
@@ -84,9 +107,8 @@ if total_scrobbles > 0:
         stats = f"Avg **{avg_scrobbles:.1f}** scrobbles/day · Most active day: **{day_str}** ({most_active_day[1]} scrobbles)"
         fields.append({"name": "Activity", "value": stats, "inline": False})
 
-
+medals = ["🥇", "🥈", "🥉"]
 if track_counter:
-    medals = ["🥇", "🥈", "🥉"]
     lines = []
     for i, ((a, t), c) in enumerate(track_counter):
         prefix = medals[i] if i < len(medals) else "•"
@@ -94,7 +116,6 @@ if track_counter:
     fields.append({"name": "Top Tracks", "value": "\n".join(lines), "inline": False})
 
 if album_counter:
-    medals = ["🥇", "🥈", "🥉"]
     lines = []
     for i, ((ar, al), c) in enumerate(album_counter):
         prefix = medals[i] if i < len(medals) else "•"
@@ -102,26 +123,36 @@ if album_counter:
     fields.append({"name": "Top Albums", "value": "\n".join(lines), "inline": False})
 
 if artist_counter:
-    medals = ["🥇", "🥈", "🥉"]
     lines = []
     for i, (a, c) in enumerate(artist_counter):
         prefix = medals[i] if i < len(medals) else "•"
         lines.append(f"{prefix} **{a}** · {c}×")
     fields.append({"name": "Top Artists", "value": "\n".join(lines), "inline": False})
 
-thumb_url = None
-if artist_counter:
-    top_artist = artist_counter[0][0]
-    for r in reversed(rows):
-        if r["artist"] == top_artist and r.get("image"):
-            thumb_url = r["image"]
-            break
 
-if not thumb_url:
+def find_thumbnail(
+    artist_name: str = None, album_name: str = None, track_name: str = None
+) -> str | None:
+    """Find a thumbnail URL matching the given criteria, or return any available image."""
+
     for r in reversed(rows):
+        if artist_name and r["artist"] != artist_name:
+            continue
+        if album_name and r.get("album") != album_name:
+            continue
+        if track_name and r["track"] != track_name:
+            continue
         if r.get("image"):
-            thumb_url = r["image"]
-            break
+            return r["image"]
+
+    return None
+
+
+thumb_url = (
+    find_thumbnail(artist_name=artist_counter[0][0])
+    if artist_counter
+    else find_thumbnail()
+)
 
 # Embed 1: Main Summary
 summary_embed = {
@@ -131,54 +162,40 @@ summary_embed = {
     "fields": [f for f in fields if f["name"] in ("Activity")],
 }
 if thumb_url:
-    summary_embed["thumbnail"] = {"url": thumb_url}
+    summary_embed["thumbnail"] = thumb_url
 
 
 def create_list_embed(title: str, field_name: str) -> dict | None:
     """Creates an embed for a list of items."""
-    for field in fields:
-        if field["name"] == field_name:
-            embed = {
-                "title": title,
-                "color": 3447003,
-                "fields": [
-                    {"name": field_name, "value": field["value"], "inline": False}
-                ],
-            }
-            # Find a thumbnail from the original track data
-            list_thumb_url = None
-            if field_name == "Top Artists" and artist_counter:
-                top_list_artist = artist_counter[0][0]
-                for api_track in data.get("recenttracks").get("track", []):
-                    artist_name = norm((api_track.get("artist") or {}).get("#text"))
-                    if artist_name == top_list_artist:
-                        list_thumb_url = first_image(api_track.get("image"))
-                        if list_thumb_url:
-                            break
-            elif field_name == "Top Albums" and album_counter:
-                top_list_artist, top_album = album_counter[0][0]
-                for api_track in data.get("recenttracks").get("track", []):
-                    artist_name = norm((api_track.get("artist") or {}).get("#text"))
-                    album_name = norm((api_track.get("album") or {}).get("#text"))
-                    if artist_name == top_list_artist and album_name == top_album:
-                        list_thumb_url = first_image(api_track.get("image"))
-                        if list_thumb_url:
-                            break
-            elif field_name == "Top Tracks" and track_counter:
-                top_list_artist, top_track = track_counter[0][0]
-                for api_track in data.get("recenttracks").get("track", []):
-                    artist_name = norm((api_track.get("artist") or {}).get("#text"))
-                    track_name = norm(api_track.get("name"))
-                    if artist_name == top_list_artist and track_name == top_track:
-                        list_thumb_url = first_image(api_track.get("image"))
-                        if list_thumb_url:
-                            break
+    field = next((f for f in fields if f["name"] == field_name), None)
+    if not field:
+        return None
 
-            if list_thumb_url:
-                embed["thumbnail"] = {"url": list_thumb_url}
+    embed = {
+        "title": title,
+        "color": 3447003,
+        "fields": [{"name": field_name, "value": field["value"], "inline": False}],
+    }
 
-            return embed
-    return None
+    # Find thumbnail based on the top item
+    thumb_map = {
+        "Top Artists": (artist_counter[0][0], None, None)
+        if artist_counter
+        else (None, None, None),
+        "Top Albums": (album_counter[0][0][0], album_counter[0][0][1], None)
+        if album_counter
+        else (None, None, None),
+        "Top Tracks": (track_counter[0][0][0], None, track_counter[0][0][1])
+        if track_counter
+        else (None, None, None),
+    }
+
+    if field_name in thumb_map:
+        art, alb, trk = thumb_map[field_name]
+        if thumb := find_thumbnail(artist_name=art, album_name=alb, track_name=trk):
+            embed["thumbnail"] = thumb
+
+    return embed
 
 
 output = {
