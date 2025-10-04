@@ -1,6 +1,10 @@
-# n8n Code (Python Beta) — Last 2 Weeks Steam Report (strict to given shape; no walrus)
+# In n8n this is the input to the node:
+# data = _input.all()[0].json
+# import pyodide_js
+# await pyodide_js.loadPackage('tzdata')
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 
 def to_int(x):
@@ -30,7 +34,7 @@ total_minutes = sum(to_int(g.get("playtime_2weeks", 0)) for g in games)
 total_hours = minutes_to_hours(total_minutes)
 unique_games = len(games)
 
-today = datetime.now(timezone.utc).date()
+today = datetime.now(ZoneInfo("Europe/Paris")).date()
 start_date = today - timedelta(days=14)
 date_range = f"{start_date.isoformat()} → {today.isoformat()}"
 
