@@ -125,16 +125,73 @@ if not thumb_url:
             thumb_url = r["image"]
             break
 
-embed = {
+# Embed 1: Main Summary
+summary_embed = {
     "title": "🎧 Weekly Last.fm Report",
     "description": summary,
     "color": 3447003,
-    "fields": fields,
+    "fields": [f for f in fields if f["name"] in ("Activity")],
 }
 if thumb_url:
-    embed["thumbnail"] = {"url": thumb_url}
+    summary_embed["thumbnail"] = {"url": thumb_url}
 
-# return [{"json": {"embed": embed}}]
+
+def create_list_embed(title: str, field_name: str) -> dict | None:
+    """Creates an embed for a list of items."""
+    for field in fields:
+        if field["name"] == field_name:
+            embed = {
+                "title": title,
+                "color": 3447003,
+                "fields": [
+                    {"name": field_name, "value": field["value"], "inline": False}
+                ],
+            }
+            # Find a thumbnail
+            list_thumb_url = None
+            if field_name == "Top Artists" and artist_counter:
+                top_list_artist = artist_counter[0][0]
+                for row in reversed(rows):
+                    if row["artist"] == top_list_artist and row.get("image"):
+                        list_thumb_url = row["image"]
+                        break
+            elif field_name == "Top Albums" and album_counter:
+                top_list_artist, top_album = album_counter[0][0]
+                for row in reversed(rows):
+                    if (
+                        row["artist"] == top_list_artist
+                        and row["album"] == top_album
+                        and row.get("image")
+                    ):
+                        list_thumb_url = row["image"]
+                        break
+            elif field_name == "Top Tracks" and track_counter:
+                top_list_artist, top_track = track_counter[0][0]
+                for row in reversed(rows):
+                    if (
+                        row["artist"] == top_list_artist
+                        and row["track"] == top_track
+                        and row.get("image")
+                    ):
+                        list_thumb_url = row["image"]
+                        break
+
+            if list_thumb_url:
+                embed["thumbnail"] = {"url": list_thumb_url}
+
+            return embed
+    return None
+
+
+output = {
+    "summary_embed": summary_embed,
+    "track_embed": create_list_embed("Top Tracks", "Top Tracks"),
+    "album_embed": create_list_embed("Top Albums", "Top Albums"),
+    "artist_embed": create_list_embed("Top Artists", "Top Artists"),
+}
+
+
+# return [{"json": output}]
 
 # local script
-print([{"json": {"embed": embed}}])
+print(json.dumps([{"json": output}]))
