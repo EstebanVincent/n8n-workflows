@@ -4,7 +4,7 @@
 # outside n8n, load from a file for testing:
 import json
 
-with open("input.json", "r", encoding="utf-8") as f:
+with open("workflows/lastfm/input.json", "r", encoding="utf-8") as f:
     data = json.load(f)
 
 from collections import Counter
@@ -58,28 +58,25 @@ def extract_tracks(js: Any) -> List[Dict[str, Any]]:
 
 # Gather weekly tracks from all inputs; ignore "now playing"
 rows: List[Dict[str, Any]] = []
-for it in _input.all():
-    js = it.json
-    for tr in extract_tracks(js):
-        attr = tr.get("@attr") if is_dict(tr) else None
-        if is_dict(attr) and attr.get("nowplaying") in ("true", True):
-            continue
-        artist = norm(
-            (tr.get("artist") or {}).get("#text")
-            if is_dict(tr.get("artist"))
-            else tr.get("artist")
-        )
-        track = norm(tr.get("name"))
-        album = norm(
-            (tr.get("album") or {}).get("#text")
-            if is_dict(tr.get("album"))
-            else tr.get("album")
-        )
-        image = first_image(tr.get("image"))
-        if artist and track:
-            rows.append(
-                {"artist": artist, "track": track, "album": album, "image": image}
-            )
+
+for tr in extract_tracks(data):
+    attr = tr.get("@attr") if is_dict(tr) else None
+    if is_dict(attr) and attr.get("nowplaying") in ("true", True):
+        continue
+    artist = norm(
+        (tr.get("artist") or {}).get("#text")
+        if is_dict(tr.get("artist"))
+        else tr.get("artist")
+    )
+    track = norm(tr.get("name"))
+    album = norm(
+        (tr.get("album") or {}).get("#text")
+        if is_dict(tr.get("album"))
+        else tr.get("album")
+    )
+    image = first_image(tr.get("image"))
+    if artist and track:
+        rows.append({"artist": artist, "track": track, "album": album, "image": image})
 
 total_scrobbles = len(rows)
 unique_tracks = len({(r["artist"], r["track"]) for r in rows})
@@ -128,4 +125,7 @@ embed = {
 if thumb_url:
     embed["thumbnail"] = {"url": thumb_url}
 
-return [{"json": {"embed": embed}}]
+# return [{"json": {"embed": embed}}]
+
+# local script
+print([{"json": {"embed": embed}}])
