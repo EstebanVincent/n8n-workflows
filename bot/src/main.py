@@ -1,4 +1,3 @@
-import io
 import os
 
 import discord
@@ -20,33 +19,42 @@ async def on_ready():
 
 
 @bot.tree.command(name="meme", description="Send a random meme")
-async def meme(
-    interaction: discord.Interaction, query: str = "meme on bitcoin all time high today"
-):
+async def meme(interaction: discord.Interaction, query: str):
+    # Defer the response immediately to avoid timeout
+    await interaction.response.defer()
+
     try:
         # Call the webhook with the query and API key
         webhook_payload = {"query": query}
         headers = {"apiKey": os.getenv("API_KEY"), "Content-Type": "application/json"}
-
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                os.getenv("WEBHOOK_URL"), json=webhook_payload, headers=headers
+                os.getenv("WEBHOOK_URL"),
+                json=webhook_payload,
+                headers=headers,
+                timeout=120,
             )
 
         if response.status_code == 200:
-            # Create a Discord file from the binary image data
-            image_buffer = io.BytesIO(response.content)
-            image_file = discord.File(fp=image_buffer, filename="meme.png")
-            await interaction.response.send_message(
-                content=f"Here's your meme for: {query}", file=image_file
-            )
+            # Parse JSON response to get image URL
+            data = response.json()
+
+            if data.get("success") and "data" in data:
+                image_url = data["data"]["url"]
+                embed = discord.Embed(title=f"Meme for: {query}", color=0x00FF00)
+                embed.set_image(url=image_url)
+                await interaction.followup.send(embed=embed)
+            else:
+                await interaction.followup.send(
+                    "Meme generation failed or returned invalid data."
+                )
         else:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"Webhook call failed with status: {response.status_code}"
             )
 
     except Exception as e:
-        await interaction.response.send_message(f"Error calling webhook: {str(e)}")
+        await interaction.followup.send(f"Error calling webhook: {str(e)}")
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))
