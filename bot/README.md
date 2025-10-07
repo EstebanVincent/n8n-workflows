@@ -2,6 +2,10 @@
 
 This is a Discord bot that runs on my Raspberry Pi 4 8GB.
 
+## Setup
+
+If your `.env` file contains `$` characters in token values, escape them by changing `$` to `$$` to prevent Docker Compose variable interpolation.
+
 ## Running with Docker Compose (Recommended)
 
 ```bash
