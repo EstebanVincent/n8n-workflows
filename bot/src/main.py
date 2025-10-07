@@ -58,4 +58,4 @@ async def meme(interaction: discord.Interaction, prompt: str):
         )
 
 
-bot.run(os.getenv("DISCORD_TOKEN"))
+client.run(os.getenv("DISCORD_TOKEN"))
