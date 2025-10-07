@@ -2,23 +2,23 @@ import os
 
 import discord
 import httpx
-from discord.ext import commands
 
 intents = discord.Intents.default()
-bot = commands.Bot(command_prefix="!", intents=intents)
+client = discord.Client(intents=intents)
+tree = discord.app_commands.CommandTree(client)
 
 
-@bot.event
+@client.event
 async def on_ready():
-    print(f"Bot logged in as {bot.user}")
+    print(f"Bot logged in as {client.user}")
     try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} command(s)")
+        await tree.sync()
+        print("Slash commands synced successfully.")
     except Exception as e:
-        print(e)
+        print(f"Failed to sync commands: {e}")
 
 
-@bot.tree.command(name="meme", description="Create a meme based on your prompt")
+@tree.command(name="meme", description="Create a meme based on your prompt")
 async def meme(interaction: discord.Interaction, prompt: str):
     # Defer the response immediately to avoid timeout
     await interaction.response.defer()
@@ -27,8 +27,8 @@ async def meme(interaction: discord.Interaction, prompt: str):
         # Call the webhook with the prompt and API key
         webhook_payload = {"query": prompt}
         headers = {"apiKey": os.getenv("API_KEY"), "Content-Type": "application/json"}
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
+        async with httpx.AsyncClient() as httpx_client:
+            response = await httpx_client.post(
                 os.getenv("WEBHOOK_URL"),
                 json=webhook_payload,
                 headers=headers,
