@@ -1,0 +1,109 @@
+{
+  "name": "Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        32,
+        -16
+      ],
+      "id": "e28f3be6-d0f3-4817-9d52-70be10976d07",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1423405401269080247",
+          "mode": "list",
+          "cachedResultName": "n8n.nasvincent",
+          "cachedResultUrl": "https://discord.com/channels/1423405401269080247"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1424081095921500232",
+          "mode": "list",
+          "cachedResultName": "notification",
+          "cachedResultUrl": "https://discord.com/channels/1423405401269080247/1424081095921500232"
+        },
+        "content": "=",
+        "options": {},
+        "embeds": {
+          "values": [
+            {
+              "inputMethod": "=json",
+              "json": "={{ $json.embed.toJsonString() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -16
+      ],
+      "id": "dcb8065d-9e2a-46b9-9eff-c56dee591cb5",
+      "name": "Send a message",
+      "webhookId": "38019bd7-f6a1-41a4-a3a9-e469f05b03d7",
+      "credentials": {
+        "discordBotApi": {
+          "id": "Ne07PmPTyVbZwaec",
+          "name": "n8n.nasvincent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# This script formats error data from an n8n Error Trigger into a Discord embed.\n# It's designed to run in a Code node.\n\noutput_items = []\n\n# Loop through all items passed to the node. The Error Trigger usually sends one.\nfor item in _input.all():\n    # --- 1. Extract data from the error input ---\n    execution = item.json.get(\"execution\", {})\n    error_details = execution.get(\"error\", {})\n    workflow = item.json.get(\"workflow\", {})\n\n    # --- 2. Set the embed color to red for errors ---\n    error_color = 15158332  # Red\n\n    # --- 3. Create a clear title and description ---\n    final_title = f\"❌ Workflow Error: {workflow.get('name', ' Unknown Workflow')}\"\n    final_description = \"An error was caught during execution. See details below.\"\n\n    # --- 4. Build fields with key error information ---\n    final_fields = [\n        # Field for Workflow Name and ID\n        {\n            \"name\": \"Workflow\",\n            \"value\": f\"{workflow.get('name', 'N/A')} (ID: {workflow.get('id', 'N/A')})\",\n            \"inline\": True,\n        },\n        # Field for the node that failed\n        {\n            \"name\": \"Failed Node\",\n            \"value\": execution.get(\"lastNodeExecuted\", \"N/A\"),\n            \"inline\": True,\n        },\n        # Field for the direct link to the failed execution\n        {\n            \"name\": \"Execution Log\",\n            \"value\": f\"[Click to view execution]({execution.get('url', '# ')})\",\n            \"inline\": False,\n        },\n        # Field for the error message, formatted as a code block\n        {\n            \"name\": \"Error Message\",\n            \"value\": f\"```{error_details.get('message', 'No message available.')}```\",\n            \"inline \": False,\n        },\n    ]\n\n    # --- 5. Add stacktrace if available, truncated to fit Discord's limit ---\n    stacktrace = error_details.get(\"stack\")\n    if stacktrace:\n        # Truncate stacktrace to prevent hitting Discord's 1024 -character limit for field values\n        truncated_stack = (\n            (stacktrace[:950] + \"...\") if len(stacktrace) > 950 else stacktrace\n        )\n        final_fields.append(\n            {\"name\": \"Stacktrace\", \"value\": f\"```{truncated_stack}```\", \"inline\": False}\n        )\n\n    # --- 6. Assemble the final embed object ---\n    final_json = {\n        \"embed\": {\n            \"title\": final_title,\n            \"description\": final_description,\n            \"color\": error_color,\n            \"author\": \"Error Handler\",\n            \"fields\": final_fields,\n            \"footer\": {\n                \"text\": f\"Mode: {execution.get('mode', 'N/A')} | Execution ID: {execution.get('id', 'N/A')}\"\n            },\n        }\n    }\n\n    # Add the result to our list of outputs\n    output_items.append({\"json\": final_json})\n\n# --- 7. Return the formatted data for the next node (e.g., Discord node) ---\nreturn output_items\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        -16
+      ],
+      "id": "01a363dd-86a6-4a15-8148-a43975243514",
+      "name": "Create embed json"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Create embed json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create embed json": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "44fdddef-35d4-4dff-afac-ed03004a9fa0",
+  "meta": {
+    "instanceId": "3cf4582185e2d6446b74ac642cd4f8b632c7e309ccad401283bece71e46aa8d9"
+  },
+  "id": "oaGEWAbViV34S8Ry",
+  "tags": []
+}
