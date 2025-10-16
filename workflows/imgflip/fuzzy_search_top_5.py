@@ -1,15 +1,8 @@
-# In n8n this is the input to the node:
-# data = _input.all()[0].json["data"]
-
-# outside n8n, load from a file for testing:
 import json
 from difflib import SequenceMatcher
 
-with open("workflows/imgflip/memes.json", "r", encoding="utf-8") as f:
-    data = json.load(f)
 
-
-def fuzzy_search_top_5(meme_data, search_query):
+def fuzzy_search_top_5(memes, query):
     """
     Perform fuzzy search on meme data based on name and description.
     Returns the top 5 best matches.
@@ -22,12 +15,14 @@ def fuzzy_search_top_5(meme_data, search_query):
     def get_match_score(meme_obj, search_term):
         """Calculate overall match score for a meme object."""
         name_score = calculate_similarity(meme_obj["name"], search_term)
-        description_score = calculate_similarity(meme_obj["description"], search_term)
+        # The description might not exist for all memes
+        description = meme_obj.get("description", "")
+        description_score = calculate_similarity(description, search_term)
 
         # Weight name matches higher than description matches
         # Also check for partial matches in both fields
         name_words = meme_obj["name"].lower().split()
-        description_words = meme_obj["description"].lower().split()
+        description_words = description.lower().split()
         query_words = search_term.lower().split()
 
         # Bonus for exact word matches
@@ -50,11 +45,52 @@ def fuzzy_search_top_5(meme_data, search_query):
 
     # Calculate scores for all memes
     scored_memes = []
-    for meme_item in meme_data:
-        score = get_match_score(meme_item, search_query)
+    for meme_item in memes:
+        score = get_match_score(meme_item, query)
         scored_memes.append((meme_item, score))
 
     # Sort by score in descending order and return top 5
     scored_memes.sort(key=lambda x: x[1], reverse=True)
 
     return [meme_obj for meme_obj, score in scored_memes[:5]]
+
+
+if __name__ == "__main__":
+    import click
+
+    @click.command()
+    @click.option(
+        "-q",
+        "--query",
+        type=str,
+        required=True,
+        help="Search query for fuzzy matching memes.",
+        prompt="Enter your search query",
+    )
+    @click.option(
+        "-m",
+        "--memes",
+        type=click.Path(exists=True),
+        default="workflows/imgflip/memes.json",
+        help="Path to the JSON file containing meme data.",
+    )
+    def main(query, memes):
+        """Fuzzy search for memes."""
+        try:
+            with open(memes, "r", encoding="utf-8") as f:
+                meme_data = json.load(f)
+        except json.JSONDecodeError:
+            print(f"Error: Could not decode JSON from the file '{memes}'.")
+            return
+
+        results = fuzzy_search_top_5(meme_data, query)
+        print(json.dumps(results, indent=2))
+
+    main()  # pylint: disable=no-value-for-parameter
+else:
+    # In n8n, the script is not run as the main program, and _input is provided.
+    data = _input.first().json.data  # pylint: disable=undefined-variable # type: ignore # noqa
+
+    # The result of this script will be the output of the n8n node
+    result = fuzzy_search_top_5(data[0].data, data[1].output.query)
+    # return result
