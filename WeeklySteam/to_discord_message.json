@@ -1,0 +1,18 @@
+{
+  "response": {
+    "total_count": 1,
+    "games": [
+      {
+        "appid": 1313140,
+        "name": "Cult of the Lamb",
+        "playtime_2weeks": 783,
+        "playtime_forever": 938,
+        "img_icon_url": "337223c1a97705aee1714ad9534c7d6cfabd92b0",
+        "playtime_windows_forever": 938,
+        "playtime_mac_forever": 0,
+        "playtime_linux_forever": 0,
+        "playtime_deck_forever": 0
+      }
+    ]
+  }
+}
