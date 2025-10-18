@@ -71,7 +71,7 @@ if __name__ == "__main__":
         "-m",
         "--memes",
         type=click.Path(exists=True),
-        default="workflows/imgflip/memes.json",
+        default="ImgflipMemeCreator/fuzzy_search_top_5.json",
         help="Path to the JSON file containing meme data.",
     )
     def main(query, memes):
