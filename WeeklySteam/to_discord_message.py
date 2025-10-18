@@ -59,7 +59,7 @@ if __name__ == "__main__":
     @click.option(
         "--json-path",
         type=click.Path(exists=True),
-        default="WeeklySteam/to_discord_message.json",
+        default="WeeklySteam/inputs/to_discord_message.json",
         help="Path to the JSON file containing the input data for the n8n node.",
     )
     def main(json_path):

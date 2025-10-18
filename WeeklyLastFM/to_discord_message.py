@@ -186,7 +186,7 @@ if __name__ == "__main__":
     @click.option(
         "--json-path",
         type=click.Path(exists=True),
-        default="WeeklyLastFM/to_discord_message.json",
+        default="WeeklyLastFM/inputs/to_discord_message.json",
         help="Path to the JSON file containing the input data for the n8n node.",
     )
     def main(json_path):
