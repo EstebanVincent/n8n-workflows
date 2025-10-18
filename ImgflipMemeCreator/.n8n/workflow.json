@@ -1,0 +1,920 @@
+{
+  "name": "Imgflip",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://api.imgflip.com/get_memes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        -304
+      ],
+      "id": "aaa93116-2178-4597-bb1e-a06da2265a2c",
+      "name": "Get memes",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1scH3GiSMsgRe4FXWSx1FcPp7jWfytwVzRozh-ZqlfI8",
+          "mode": "list",
+          "cachedResultName": "memes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1scH3GiSMsgRe4FXWSx1FcPp7jWfytwVzRozh-ZqlfI8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "description": "={{ $json.output.description }}",
+            "id": "={{ $('HTTP Request').item.json.meme.id }}",
+            "name": "={{ $('HTTP Request').item.json.meme.name }}",
+            "url": "={{ $('HTTP Request').item.json.meme.url }}",
+            "width": "={{ $('HTTP Request').item.json.meme.width }}",
+            "height": "={{ $('HTTP Request').item.json.meme.height }}",
+            "box_count": "={{ $('HTTP Request').item.json.meme.box_count }}",
+            "captions": "={{ $('HTTP Request').item.json.meme.captions }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "width",
+              "displayName": "width",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "height",
+              "displayName": "height",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "box_count",
+              "displayName": "box_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "captions",
+              "displayName": "captions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        704,
+        128
+      ],
+      "id": "869a54f9-fb02-486e-bfd3-77d8d2800969",
+      "name": "Append rows",
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JK7x2vJbr86TZAEl",
+          "name": "este.vincent@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1scH3GiSMsgRe4FXWSx1FcPp7jWfytwVzRozh-ZqlfI8",
+          "mode": "list",
+          "cachedResultName": "memes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1scH3GiSMsgRe4FXWSx1FcPp7jWfytwVzRozh-ZqlfI8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1scH3GiSMsgRe4FXWSx1FcPp7jWfytwVzRozh-ZqlfI8/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        176,
+        -112
+      ],
+      "id": "f2f2f3b6-6b45-41df-96d5-631abaf7e75b",
+      "name": "Get all rows",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JK7x2vJbr86TZAEl",
+          "name": "este.vincent@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        400,
+        -112
+      ],
+      "id": "74db3a21-427c-425a-becb-318f4338877f",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        624,
+        -208
+      ],
+      "id": "182fbbd2-9462-4fe1-adc7-d6475ee747e0",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        848,
+        -208
+      ],
+      "id": "548fb2fa-24ab-4f18-9691-9b3834c5a72f",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.meme.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        128,
+        128
+      ],
+      "id": "0491efd5-7261-4f59-a18f-6d1bcb91706f",
+      "name": "HTTP Request",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"description\": \"image description\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        496,
+        352
+      ],
+      "id": "68e9266f-3898-486f-9c14-8a7f602379f5",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4fdaa4b7-a019-49b4-b9f2-0c8a9fe1dbe6",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        -208
+      ],
+      "id": "04188404-9fb8-440c-aea3-064fee4671f3",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4.1",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        800
+      ],
+      "id": "443c2fab-ff31-4a41-810c-323e4243ed18",
+      "name": "Azure OpenAI Chat Model1",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "BejytSUNW3t9W8aV",
+          "name": "mcp-test-n8n-esteban"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"query\": \"query\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        688,
+        880
+      ],
+      "id": "64a7f195-4946-43ce-a0b1-45f1a99fe232",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1scH3GiSMsgRe4FXWSx1FcPp7jWfytwVzRozh-ZqlfI8",
+          "mode": "list",
+          "cachedResultName": "memes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1scH3GiSMsgRe4FXWSx1FcPp7jWfytwVzRozh-ZqlfI8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1scH3GiSMsgRe4FXWSx1FcPp7jWfytwVzRozh-ZqlfI8/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "box_count",
+              "lookupValue": "2"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        96,
+        528
+      ],
+      "id": "af3d6338-1d51-49ae-aa01-4b5589bfd06d",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JK7x2vJbr86TZAEl",
+          "name": "este.vincent@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        928,
+        128
+      ],
+      "id": "e2be280f-4528-463e-bfc6-4634ecf0d9df",
+      "name": "Aggregate2"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"template_id\": \"<selected_template_id>\",\n  \"text0\": \"<text for top box or first caption>\",\n  \"text1\": \"<text for bottom box or second caption>\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        208,
+        1296
+      ],
+      "id": "f8d70eb9-35c7-464b-aa2e-738d8ac96d68",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "include": "specifiedFields",
+        "fieldsToInclude": "id, name, description",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        320,
+        528
+      ],
+      "id": "71a7763f-da17-404f-b2d8-20f9cf9aeef6",
+      "name": "Aggregate3"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "import json\nfrom difflib import SequenceMatcher\n\n\ndef fuzzy_search_top_5(memes, query):\n    \"\"\"\n    Perform fuzzy search on meme data based on name and description.\n    Returns the top 5 best matches.\n    \"\"\"\n\n    def calculate_similarity(text, search_term):\n        \"\"\"Calculate similarity score between text and query using SequenceMatcher.\"\"\"\n        return SequenceMatcher(None, text.lower(), search_term.lower()).ratio()\n\n    def get_match_score(meme_obj, search_term):\n        \"\"\"Calculate overall match score for a meme object.\"\"\"\n        name_score = calculate_similarity(meme_obj[\"name\"], search_term)\n        # The description might not exist for all memes\n        description = meme_obj.get(\"description\", \"\")\n        description_score = calculate_similarity(description, search_term)\n\n        # Weight name matches higher than description matches\n        # Also check for partial matches in both fields\n        name_words = meme_obj[\"name\"].lower().split()\n        description_words = description.lower().split()\n        query_words = search_term.lower().split()\n\n        # Bonus for exact word matches\n        name_word_matches = sum(1 for word in query_words if word in name_words)\n        description_word_matches = sum(\n            1 for word in query_words if word in description_words\n        )\n\n        # Combined score with weights\n        combined_score = (\n            name_score * 0.6  # Name gets higher weight\n            + description_score * 0.3  # Description gets lower weight\n            + (name_word_matches / len(query_words))\n            * 0.1  # Bonus for name word matches\n            + (description_word_matches / len(query_words))\n            * 0.05  # Small bonus for description word matches\n        )\n\n        return combined_score\n\n    # Calculate scores for all memes\n    scored_memes = []\n    for meme_item in memes:\n        score = get_match_score(meme_item, query)\n        scored_memes.append((meme_item, score))\n\n    # Sort by score in descending order and return top 5\n    scored_memes.sort(key=lambda x: x[1], reverse=True)\n\n    return [meme_obj for meme_obj, score in scored_memes[:5]]\n\n\nif __name__ == \"__main__\":\n    import click\n\n    @click.command()\n    @click.option(\n        \"-q\",\n        \"--query\",\n        type=str,\n        required=True,\n        help=\"Search query for fuzzy matching memes.\",\n        prompt=\"Enter your search query\",\n    )\n    @click.option(\n        \"-m\",\n        \"--memes\",\n        type=click.Path(exists=True),\n        default=\"workflows/imgflip/memes.json\",\n        help=\"Path to the JSON file containing meme data.\",\n    )\n    def main(query, memes):\n        \"\"\"Fuzzy search for memes.\"\"\"\n        try:\n            with open(memes, \"r\", encoding=\"utf-8\") as f:\n                meme_data = json.load(f)\n        except json.JSONDecodeError:\n            print(f\"Error: Could not decode JSON from the file '{memes}'.\")\n            return\n\n        results = fuzzy_search_top_5(meme_data, query)\n        print(json.dumps(results, indent=2))\n\n    main()  # pylint: disable=no-value-for-parameter\nelse:\n    # In n8n, the script is not run as the main program, and _input is provided.\n    data = _input.first().json.data  # pylint: disable=undefined-variable # type: ignore # noqa: F821\n\n    # The result of this script will be the output of the n8n node\n    result = fuzzy_search_top_5(data[0].data, data[1].output.query)\n    return result\n  \n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        528
+      ],
+      "id": "36059300-9010-4993-8550-e5d059b777c9",
+      "name": "Fuzzy search top 5",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook').item.json.body.query }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are Meme Template Finder, a text-to-query generator specialized in identifying the most fitting meme template for a given user idea or caption concept.  Your task is to read a user request prompt describing the intended situation, tone, or joke, and generate a short, precise search query that can be used to retrieve the ideal meme template (e.g., for a meme API or image database).  The query should:  Contain only essential keywords (no sentences or explanations).  Reflect the emotion, relationship, or contrast implied by the prompt.  Use common template names when possible (e.g., “Drake Hotline Bling,” “Distracted Boyfriend,” “Change My Mind,” “Expanding Brain,” etc.).  Avoid any formatting except plain text. Answer in JSON"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        544,
+        656
+      ],
+      "id": "042168f9-c50d-4ed0-841a-97c61a4819a1",
+      "name": "User prompt to template query",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        896,
+        528
+      ],
+      "id": "d13ba2ed-e340-48d5-beaf-79ae3bf5f483",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        528
+      ],
+      "id": "c2de77d3-a238-4e4d-a12d-fce5b3d18ff3",
+      "name": "Aggregate4"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook').item.json.body.query }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are **Meme Template Selector & Caption Generator**, a structured-output reasoning model specialized in selecting the most relevant meme template and generating API-ready caption parameters.  ### **Objective**  Given:  * A **user prompt** describing the intended meme idea or joke * A **list of meme templates** (each with `id`, `name`, and `description`)  You must:  1. **Select the single most appropriate template** based on semantic fit, tone, humor type, and caption structure. 2. **Generate the corresponding caption data** according to the number and placement of text boxes described in the template.  ### **Rules**  * Always return **one** chosen template. * Follow each template’s described **text box mapping** precisely. * Each caption field must be concise, expressive, and contextually aligned with the user’s meme idea. * Ensure that the output strictly follows the JSON structure below.  ### **Output Format**  ```json {   \"template_id\": \"<selected_template_id>\",   \"text0\": \"<text for top box or first caption>\",   \"text1\": \"<text for bottom box or second caption>\" } ```  You must output only this JSON object."
+            },
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "={{ JSON.stringify($json.data) }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        64,
+        1072
+      ],
+      "id": "671b2c18-93d6-4d10-8f2d-0f16422a4472",
+      "name": "Meme Maker",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.imgflip.com/caption_image",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "template_id",
+              "value": "={{ $json.output.template_id }}"
+            },
+            {
+              "name": "text0",
+              "value": "={{ $json.output.text0 }}"
+            },
+            {
+              "name": "text1",
+              "value": "={{ $json.output.text1 }}"
+            },
+            {
+              "name": "username",
+              "value": "=esvi"
+            },
+            {
+              "name": "password",
+              "value": "S$oSfGAm6Ao@miy6"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        416,
+        1072
+      ],
+      "id": "d993dea0-50f9-4fb3-ac3c-64921f62fa9a",
+      "name": "/caption_image"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=name: {{ $('rm_existing_ids').item.json.name }}\nwidth: {{ $('rm_existing_ids').item.json.width }}\nheight: {{ $('rm_existing_ids').item.json.height }}\nbox_count: {{ $('rm_existing_ids').item.json.box_count }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are Meme Description Generator, a vision-language model specialized in meme interpretation and templated caption guidance.  Your task is to analyze an input meme image, using the provided template (e.g., “Drake Hotline Bling,” “Distracted Boyfriend,” etc.), metadata (e.g., context, theme, topic), and information about the number of text boxes to be filled.  You must output a single Markdown field containing a detailed description of the meme that covers:  The visual layout (characters, expressions, panels, perspective, etc.)  The humor or rhetorical structure of the meme (contrast, irony, reaction, escalation, etc.)  A clear mapping of what should be written in each text box, explicitly describing its intended meaning or role in the meme’s logic (e.g., “Text box 1: the thing being rejected,” “Text box 2: the preferred option”). Answer in JSON"
+            },
+            {
+              "type": "HumanMessagePromptTemplate",
+              "messageType": "imageBinary",
+              "imageDetail": "high"
+            }
+          ]
+        },
+        "batching": {
+          "delayBetweenBatches": 1000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        352,
+        128
+      ],
+      "id": "f50506f3-a251-4be9-831b-c81d3c6be01d",
+      "name": "meme description generator",
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "waitBetweenTries": 5000,
+      "maxTries": 5
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "imgflip",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        -208
+      ],
+      "id": "5f911af7-8a8d-4a5f-a616-cd1cf256a986",
+      "name": "Webhook",
+      "webhookId": "cd2f0a89-2866-4119-8a49-05f1b7bd5aae",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "xmDAP3DLpSw749gZ",
+          "name": "imgflip apiKey"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "import json\n\n\ndef rm_existing_ids(data: dict) -> list:\n    \"\"\"Filters out memes that already exist in the database and returns new memes.\"\"\"\n    new_memes = data[\"data\"][0][\"data\"][\"memes\"]\n\n    # If there's only one data source (no existing memes), return the first 20 new memes\n    if len(data[\"data\"]) == 1:\n        return [{\"json\": {\"success\": 1, \"meme\": meme}} for meme in new_memes][:20]\n\n    # Get existing meme IDs\n    existing_memes = data[\"data\"][1][\"data\"]\n    existing_id = [meme[\"id\"] for meme in existing_memes]\n\n    # Filter out memes that already exist\n    didnt_exist_memes = [\n        {\"json\": {\"success\": 1, \"meme\": meme}}\n        for meme in new_memes\n        if int(meme[\"id\"]) not in existing_id\n    ]\n\n    # Return up to 20 new memes, or a failure indicator if none exist\n    if didnt_exist_memes:\n        return didnt_exist_memes[:20]\n    return [{\"json\": {\"success\": 0}}]\n\n\nif __name__ == \"__main__\":\n    import click\n\n    @click.command()\n    @click.option(\n        \"--json-path\",\n        type=click.Path(exists=True),\n        default=\"ImgflipMemeCreator/inputs/rm_existing_ids.json\",\n        help=\"Path to the JSON file containing the input data for the n8n node.\",\n    )\n    def main(json_path):\n        \"\"\"CLI for local testing of the rm_existing_ids script.\"\"\"\n        try:\n            with open(json_path, \"r\", encoding=\"utf-8\") as f:\n                data = json.load(f)\n        except json.JSONDecodeError:\n            print(f\"Error: Could not decode JSON from the file '{json_path}'.\")\n            return\n\n        result = rm_existing_ids(data)\n        print(json.dumps(result, indent=2))\n\n    main()  # pylint: disable=no-value-for-parameter\nelse:\n    # In n8n, the script is not run as the main program, and _input is provided.\n    data = _input.first().json.to_py()  # pylint: disable=undefined-variable # type: ignore # noqa\n    return rm_existing_ids(data)\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        -208
+      ],
+      "id": "836e624e-e793-4417-aa91-0858ab76dd28",
+      "name": "rm_existing_ids",
+      "alwaysOutputData": false
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get memes": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append rows": {
+      "main": [
+        [
+          {
+            "node": "Aggregate2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all rows": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "rm_existing_ids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "meme description generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "meme description generator",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "User prompt to template query",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "meme description generator",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Meme Maker",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "User prompt to template query",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate2": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Meme Maker",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Aggregate3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate3": {
+      "main": [
+        [
+          {
+            "node": "User prompt to template query",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User prompt to template query": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fuzzy search top 5": {
+      "main": [
+        [
+          {
+            "node": "Meme Maker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate4": {
+      "main": [
+        [
+          {
+            "node": "Fuzzy search top 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meme Maker": {
+      "main": [
+        [
+          {
+            "node": "/caption_image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "/caption_image": {
+      "main": [
+        []
+      ]
+    },
+    "meme description generator": {
+      "main": [
+        [
+          {
+            "node": "Append rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get memes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get all rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "rm_existing_ids": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "oaGEWAbViV34S8Ry"
+  },
+  "versionId": "bee7ecb1-3249-4352-a71c-a4c965dc600f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3cf4582185e2d6446b74ac642cd4f8b632c7e309ccad401283bece71e46aa8d9"
+  },
+  "id": "C3KdUujtFCCSz7S8",
+  "tags": []
+}

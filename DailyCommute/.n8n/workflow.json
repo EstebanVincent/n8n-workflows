@@ -1,0 +1,634 @@
+{
+  "name": "Daily Commute Report",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://prim.iledefrance-mobilites.fr/marketplace/v2/navitia/line_reports/physical_modes/physical_mode%3AMetro/lines/line%3AIDFM%3AC01371/line_reports",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "since",
+              "value": "={{ DateTime.fromISO($json.timestamp).toFormat(\"yyyyLLdd'T'HHmmss\") }}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1216,
+        304
+      ],
+      "id": "59fed08b-9a1c-4905-b81a-838c9e7c3354",
+      "name": "Metro1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bGxe8rZfI4ASpL9U",
+          "name": "prim.iledefrance-mobilites.fr"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://prim.iledefrance-mobilites.fr/marketplace/v2/navitia/line_reports/physical_modes/physical_mode%3ATramway/lines/line%3AIDFM%3AC02528/line_reports",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "since",
+              "value": "={{ DateTime.fromISO($json.timestamp).toFormat(\"yyyyLLdd'T'HHmmss\") }}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1216,
+        496
+      ],
+      "id": "12304608-ea3a-475e-974a-1482f4f21933",
+      "name": "T10",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bGxe8rZfI4ASpL9U",
+          "name": "prim.iledefrance-mobilites.fr"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"title\": \"CommuteReport\",\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"required\": [\"overall_severity\", \"overall_summary\", \"line_reports\"], \n  \"properties\": {\n    \"overall_severity\": {\n      \"type\": \"string\",\n      \"enum\": [\"log\", \"warning\", \"critical\"],\n      \"description\": \"The highest-impact severity across all commute segments.\"\n    },\n    \"overall_summary\": {\n      \" type\": \"string\",\n      \"minLength\": 1,\n      \"description\": \"A top-level summary of the commute status. Must be 'No disruptions' if recommendation is 'go'.\"\n    },\n    \"line_reports\": {\n      \"type\": \"array\",\n      \"description\": \"A detailed report for each line in the user's commute.\",\n       \"items\": {\n        \"type\": \"object\",\n        \"required\": [\"line\", \"severity\", \"summary\"],\n        \"properties\": {\n          \"line\": {\n            \"type\": \"string\",\n            \"description\": \"The name of the transit line (e.g., 'R ER A').\"\n          },\n          \"severity\": {\n            \"type\": \"string\",\n            \"enum\": [\"log\", \"warning\", \"critical\"],\n            \"description\": \"Severity of the disruption for this specific line.\"\n          },\n          \"summary\": {\n            \"type\": \" string\",\n            \"description\": \"A short summary for this line. Must be 'Normal service' if severity is 'log'.\"\n          }\n        }\n      }\n    }\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        432
+      ],
+      "id": "abcad744-9a6b-4e77-a540-4593cc9812f0",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4.1",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        432
+      ],
+      "id": "803bf9b6-6f33-45cf-8ee6-0d4a2a594e91",
+      "name": "GPT-4.1",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "BejytSUNW3t9W8aV",
+          "name": "mcp-test-n8n-esteban"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "include": "specifiedFields",
+        "fieldsToInclude": "disruptions, line_reports",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -768,
+        208
+      ],
+      "id": "a9b343f4-64e4-4280-98e3-1fa3f64a6e20",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -992,
+        176
+      ],
+      "id": "291ee4d1-6d07-4dca-96a1-01c043c0a051",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# Get the hour field from the referenced item\nhour = int(_(\"Everyday 7:30&18:15\").first().json.get(\"Hour\", 0))\n\n# Choose commute direction\nif hour >= 13:\n    time = \"Evening\"\n    commute = [\n  {\n    \"mode\": \"metro\",\n    \"line\": \"M1\",\n    \"direction\": \"Château de Vincennes\",\n    \"from_stop\": \"Pont de Neuilly\",\n    \"to_stop\": \"Charles de Gaulle - Étoile\",\n    \"intermediate_stops\": [\"Les Sablons\", \"Porte Maillot\", \"Argentine\"]\n  },\n  {\n    \"mode\": \"rer\",\n    \"line\": \"RER A\",\n    \"direction\": \"Eastbound\",\n    \"from_stop\": \"Charles de Gaulle - Étoile\",\n    \"to_stop\": \"Châtelet - Les Halles\",\n    \"intermediate_stops\": [\"Auber\"]\n  },\n  {\n    \"mode\": \"rer\",\n    \"line\": \"RER B\",\n    \"direction\": \"Southbound\",\n    \"from_stop\": \"Châtelet - Les Halles\",\n    \"to_stop\": \"La Croix de Berny\",\n    \"intermediate_stops\": [\"Saint-Michel - Notre-Dame\", \"Luxembourg\", \"Port-Royal\", \"Denfert-Rochereau\", \"Cité Universitaire\", \"Gentilly\", \"Laplace\", \"Arcueil - Cachan\", \"Bagneux\", \"Bourg-la-Reine\", \"Parc de Sceaux\"]\n  },\n  {\n    \"mode\": \"tram\",\n    \"line\": \"T10\",\n    \"direction\": \"Clamart - Jardin Parisien\",\n    \"from_stop\": \"La Croix de Berny\",\n    \"to_stop\": \"Les Peintres\",\n    \"intermediate_stops\": [\"Lavallée\", \"Petit-Châtenay\", \"Théâtre la Piscine\"]\n  }\n]\n\nelse:\n    time = \"Morning\"\n    commute = [\n  {\n    \"mode\": \"tram\",\n    \"line\": \"T10\",\n    \"direction\": \"La Croix de Berny\",\n    \"from_stop\": \"Les Peintres\",\n    \"to_stop\": \"La Croix de Berny\",\n    \"intermediate_stops\": [\n      \"Théâtre la Piscine\",\n      \"Petit-Châtenay\",\n      \"Lavallée\"\n    ]\n  },\n  {\n    \"mode\": \"rer\",\n    \"line\": \"RER B\",\n    \"direction\": \"Northbound\",\n    \"from_stop\": \"La Croix de Berny\",\n    \"to_stop\": \"Châtelet - Les Halles\",\n    \"intermediate_stops\": [\n      \"Parc de Sceaux\",\n      \"Bourg-la-Reine\",\n      \"Bagneux\",\n      \"Arcueil - Cachan\",\n      \"Laplace\",\n      \"Gentilly\",\n      \"Cité Universitaire\",\n      \"Denfert-Rochereau\",\n      \"Port-Royal\",\n      \"Luxembourg\",\n      \"Saint-Michel - Notre-Dame\"\n    ]\n  },\n  {\n    \"mode\": \"rer\",\n    \"line\": \"RER A\",\n    \"direction\": \"Westbound\",\n    \"from_stop\": \"Châtelet - Les Halles\",\n    \"to_stop\": \"Charles de Gaulle - Étoile\",\n    \"intermediate_stops\": [\n      \"Auber\"\n    ]\n  },\n  {\n    \"mode\": \"metro\",\n    \"line\": \"M1\",\n    \"direction\": \"La Défense\",\n    \"from_stop\": \"Charles de Gaulle - Étoile\",\n    \"to_stop\": \"Pont de Neuilly\",\n    \"intermediate_stops\": [\n      \"Argentine\",\n      \"Porte Maillot\",\n      \"Les Sablons\"\n    ]\n  }\n]\n\n# Return as JSON\nreturn [{\n    \"json\": {\n        \"time\": time,\n        \"commute\": str(commute)\n    }\n}]\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        208
+      ],
+      "id": "95acc027-f2bc-4d39-9688-68b5f9f2be3a",
+      "name": "Set commute"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1423405401269080247",
+          "mode": "list",
+          "cachedResultName": "n8n.nasvincent",
+          "cachedResultUrl": "https://discord.com/channels/1423405401269080247"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1423720370124361768",
+          "mode": "list",
+          "cachedResultName": "daily-commute-report",
+          "cachedResultUrl": "https://discord.com/channels/1423405401269080247/1423720370124361768"
+        },
+        "content": "=",
+        "options": {},
+        "embeds": {
+          "values": [
+            {
+              "inputMethod": "=json",
+              "json": "={{ $json.embed.toJsonString() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        480,
+        112
+      ],
+      "id": "160038e6-040d-48c6-b545-ce4acd081eea",
+      "name": "Send a message",
+      "webhookId": "38019bd7-f6a1-41a4-a3a9-e469f05b03d7",
+      "credentials": {
+        "discordBotApi": {
+          "id": "Ne07PmPTyVbZwaec",
+          "name": "n8n.nasvincent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# Loop over input items and add a new field called 'myNewField' to the JSON of each one\nout=[]\nfor item in _input.all():\n  for line in item.json[\"output\"][\"line_reports\"]:\n    out.append(line)\nreturn out"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        304
+      ],
+      "id": "1d315ec9-86b7-48ba-9b52-2b63ffb47bf3",
+      "name": "Split in 4 items"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "13nNorVmon7bPEpshDVi_b73R6FZ_LQySFdiHZVFadGY",
+          "mode": "list",
+          "cachedResultName": "Commute Disruptions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13nNorVmon7bPEpshDVi_b73R6FZ_LQySFdiHZVFadGY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Line": "={{ $json.line }}",
+            "Severity": "={{ $json.severity }}",
+            "Summary": "={{ $json.summary }}",
+            "Time": "={{ $('Everyday 7:30&18:15').item.json.Hour + \":\" + $('Everyday 7:30&18:15').item.json.Minute }}",
+            "Date": "={{ $('Everyday 7:30&18:15').item.json.timestamp.split(\"T\")[0]}}",
+            "Commute": "={{ $('Set commute').item.json.time }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Commute",
+              "displayName": "Commute",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Line",
+              "displayName": "Line",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Severity",
+              "displayName": "Severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        480,
+        304
+      ],
+      "id": "66df318e-4596-42cd-aeec-1a9b4b35eb7c",
+      "name": "Append rows",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JK7x2vJbr86TZAEl",
+          "name": "este.vincent@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7,
+              "triggerAtMinute": 30
+            },
+            {
+              "triggerAtHour": 18,
+              "triggerAtMinute": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1440,
+        208
+      ],
+      "id": "29f09d1f-98f9-4f38-9792-e21930f64aba",
+      "name": "Everyday 7:30&18:15"
+    },
+    {
+      "parameters": {
+        "url": "https://prim.iledefrance-mobilites.fr/marketplace/v2/navitia/line_reports/physical_modes/physical_mode%3ARapidTransit/lines/line%3AIDFM%3AC01742/line_reports",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "since",
+              "value": "={{ DateTime.fromISO($json.timestamp).toFormat(\"yyyyLLdd'T'HHmmss\") }}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1216,
+        -80
+      ],
+      "id": "e05787ca-07ad-468c-84c6-a8581f8f8dfe",
+      "name": "RERA",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bGxe8rZfI4ASpL9U",
+          "name": "prim.iledefrance-mobilites.fr"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://prim.iledefrance-mobilites.fr/marketplace/v2/navitia/line_reports/physical_modes/physical_mode%3ARapidTransit/lines/line%3AIDFM%3AC01743/line_reports",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "since",
+              "value": "={{ DateTime.fromISO($json.timestamp).toFormat(\"yyyyLLdd'T'HHmmss\") }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1216,
+        112
+      ],
+      "id": "34cb0d6b-b787-4fb5-b755-dc894664e7d6",
+      "name": "RERB",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bGxe8rZfI4ASpL9U",
+          "name": "prim.iledefrance-mobilites.fr"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are “Commute Guardian.” Your role is to provide a clear, actionable summary of transit conditions for a user's specific commute.\n\nINPUTS\n- curent_date: {{ $('Everyday 7:30&18:15').item.json['Readable date'] }}\n- traffic_markdown: <<<{{ $('json_to_markdown').item.json.markdown }}>>>\n- commute_segments: {{ $json.commute }}\n\nTASK\n1.  **Analyze Each Line:** For each segment in `commute_segments`, analyze the `traffic_markdown`.\n    -   Focus only on disruptions that are active **now** or will  affect a typical morning commute. Ignore disruptions that are only for late nights, weekends, or future dates unless they impact the present commute.\n    -   For each line, determine its individual `severity` and write a brief `summary`. If there are no relevant disruptions, the severity is \"log\" and the summary must  be \"Normal service.\"\n\n2.  **Determine Overall Status:**\n    -   `overall_severity`: This must be the **highest severity** from all individual line reports (e.g., if one line is \"warning\" and the rest are \"log\", the overall severity is \"warning\").\n    -   `overall_summary`: If the `overall_recommend ation` is \"go\", this field must be \"No disruptions.\" Otherwise, create a single, concise sentence summarizing the most significant impacts on the user's journey.\n\n3.  **Generate JSON Output:** Return a single JSON object that strictly matches the `CommuteReport` schema below and nothing else.",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -96,
+        208
+      ],
+      "id": "731722ec-2936-4dec-8a3b-a8dde52bb45b",
+      "name": "Commute Guardian"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# n8n Code (Python Beta) — aggregate all inputs into one Markdown\nimport html\nimport json\nimport re\n\n\ndef strip_html(x: str) -> str:\n    if not isinstance(x, str):\n        return \"\"\n    # unescape entities then remove tags and trim spaces / collapse whitespace\n    x = html.unescape(x)\n    x = re.sub(r\"<[^>]+>\", \"\", x)\n    x = re.sub(r\"\\s+\", \" \", x).strip()\n    return x\n\n\ndef first(obj, *path, default=None):\n    \"\"\"Safe nested get with optional list indexes/keys.\"\"\"\n    cur = obj\n    for p in path:\n        try:\n            if isinstance(p, int):\n                cur = (cur or [])[p]\n            else:\n                cur = (cur or {}).get(p)\n        except Exception:\n            return default\n        if cur is None:\n            return default\n    return cur if cur is not None else default\n\n\ndef line_title(payload: dict) -> str:\n    \"\"\"Extracts a title for a transport line from the data payload.\"\"\"\n    # 1) Preferred: line_reports[0].line.name (as user noted)\n    t = first(payload, \"line_reports\", 0, \"line\", \"name\")\n    if t:\n        return t\n    # 2) Try impacted_objects -> pt_object.line/name\n    dis = first(payload, \"disruptions\", default=[]) or []\n    for d in dis:\n        # RER/Metro often exposes both pt_object.name (\"RER B\") and pt_object.line.name/code\n        t = (\n            first(d, \"impacted_objects\", 0, \"pt_object\", \"name\")\n            or first(d, \"impacted_objects\", 0, \"pt_object\", \"line\", \"name\")\n            or first(d, \"impacted_objects\", 0, \"pt_object\", \"line\", \"code\")\n        )\n        if t:\n            return t\n    return \"Unknown line\"\n\n\ndef json_to_markdown(data: dict):\n    \"\"\"Creates a Markdown report from a list of disruption data items.\"\"\"\n    sections = []\n\n    for item in data[\"data\"]:\n        title = line_title(item)\n        disruptions = item[\"disruptions\"]\n\n        sections.append(f\"# {title}\")\n\n        if not disruptions:\n            sections.append(\"_No disruptions reported._\")\n            continue\n\n        for idx, d in enumerate(disruptions, 1):\n            tags_list = d.get(\"tags\") or []\n            # Skip disruptions tagged \"Ascenseur\"\n            if any(str(t).strip().lower() == \"ascenseur\" for t in tags_list):\n                continue\n            status = d.get(\"status\") or \"-\"\n            tags = \", \".join([str(t) for t in tags_list]) or \"-\"\n            cause = d.get(\"cause\") or \"-\"\n            category = d.get(\"category\") or \"-\"\n            sev = d.get(\"severity\") or {}\n            sev_name = sev.get(\"name\") or \"-\"\n            sev_eff = sev.get(\"effect\") or \"-\"\n\n            msgs = []\n            for m in d.get(\"messages\") or []:\n                txt = strip_html(m.get(\"text\", \"\"))\n                if txt and txt not in msgs:\n                    msgs.append(txt)\n\n            sections.append(f\"## Disruption {idx}\")\n            sections.append(f\"- **Status:** {status}\")\n            sections.append(f\"- **Category:** {category}\")\n            sections.append(f\"- **Cause:** {cause}\")\n            sections.append(f\"- **Tags:** {tags}\")\n            sections.append(f\"- **Severity:** {sev_name} ({sev_eff})\")\n            if msgs:\n                sections.append(\"- **Messages:**\")\n                sections.extend([f\"  - {m}\" for m in msgs])\n            else:\n                sections.append(\"- **Messages:** -\")\n\n    return [{\"json\": {\"markdown\": \"\".join(sections)}}]\n\n\nif __name__ == \"__main__\":\n    import click\n\n    @click.command()\n    @click.option(\n        \"--json-path\",\n        type=click.Path(exists=True),\n        default=\"DailyCommute/json_to_markdown.json\",\n        help=\"Path to the JSON file containing the input data for the n8n node.\",\n    )\n    def main(json_path):\n        \"\"\"CLI for local testing of the create_embed script.\"\"\"\n        try:\n            with open(json_path, \"r\", encoding=\"utf-8\") as f:\n                data = json.load(f)\n        except json.JSONDecodeError:\n            print(f\"Error: Could not decode JSON from the file '{json_path}'.\")\n            return\n\n        result = json_to_markdown(data)\n        print(json.dumps(result, indent=2))\n\n    main()  # pylint: disable=no-value-for-parameter\nelse:\n    # In n8n, the script is not run as the main program, and _input is provided.\n    data = _input.first().json.to_py()  # pylint: disable=undefined-variable # type: ignore # noqa\n    return json_to_markdown(data)\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -544,
+        208
+      ],
+      "id": "b332ef49-53e2-4f75-931c-b501bc101ac8",
+      "name": "json_to_markdown",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "import json\n\n\ndef to_discord_message(data: dict, commute_time: str) -> list:\n    raw_data = data.get(\"output\", {})\n\n    # Define mappings for titles and colors directly from severity\n    severity_map = {\n        \"critical\": {\"color\": 15158332},  # Red\n        \"warning\": {\"color\": 15105570},  # Orange\n        \"log\": {\"color\": 3066993},  # Green\n    }\n\n    # Process the overall status\n    overall_severity = raw_data.get(\"overall_severity\", \"log\")\n    status_info = severity_map.get(overall_severity, severity_map[\"log\"])\n\n    # Create the final title, color, and description\n    final_title = f\"{commute_time} Commute Status\"\n    final_color = status_info[\"color\"]\n    final_description = f\"**{raw_data.get('overall_summary', 'No summary available')}**\"\n\n    # Process each line report to build the 'fields' array\n    final_fields = []\n    line_reports = raw_data.get(\"line_reports\", [])\n\n    for report in line_reports:\n        line_name = report.get(\"line\", \"Unknown Line\")\n        severity = report.get(\"severity\")\n        summary = report.get(\"summary\", \"\")\n\n        # This logic creates the value string based on the line's severity\n        if severity == \"log\":\n            value = \"✅ Normal service\"\n        elif severity == \"warning\":\n            value = f\"⚠️ Delays\\n{summary}\"\n        else:\n            value = f\"❌ Disruption\\n{summary}\"\n        final_fields.append({\"name\": line_name, \"value\": value, \"inline\": False})\n\n    # Construct the complete final JSON for the Discord node\n    final_json = {\n        \"embed\": {\n            \"title\": final_title,\n            \"description\": final_description,\n            \"color\": final_color,\n            \"author\": \"Commute Assistant\",\n            \"fields\": final_fields,\n            \"footer\": {\"text\": \"Legend: ✅ Normal • ⚠️ Delays • ❌ Disruption\"},\n        }\n    }\n\n    return [{\"json\": final_json}]\n\n\nif __name__ == \"__main__\":\n    import click\n\n    @click.command()\n    @click.option(\n        \"--json-path\",\n        type=click.Path(exists=True),\n        default=\"DailyCommute/to_discord_message.json\",\n        help=\"Path to the JSON file containing the input data for the n8n node.\",\n    )\n    @click.option(\n        \"--commute-time\",\n        type=str,\n        default=\"Morning\",\n        help=\"The time of day for the commute (e.g., 'Morning', 'Evening').\",\n    )\n    def main(json_path, commute_time):\n        \"\"\"CLI for local testing of the to_discord_message script.\"\"\"\n        try:\n            with open(json_path, \"r\", encoding=\"utf-8\") as f:\n                data = json.load(f)\n        except json.JSONDecodeError:\n            print(f\"Error: Could not decode JSON from the file '{json_path}'.\")\n            return\n\n        result = to_discord_message(data, commute_time)\n        print(json.dumps(result, indent=2))\n\n    main()  # pylint: disable=no-value-for-parameter\nelse:\n    # In n8n, the script is not run as the main program, and _input is provided.\n    data = _input.first().json.to_py()  # pylint: disable=undefined-variable # type: ignore # noqa\n    commute_time = _(\"Set commute\").first().json.time  # pylint: disable=undefined-variable # type: ignore # noqa\n    return to_discord_message(data, commute_time)\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        112
+      ],
+      "id": "11effe69-7d66-4e10-9997-63afb82be8ae",
+      "name": "to_discord_message"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Metro1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "T10": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Commute Guardian",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4.1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Commute Guardian",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "json_to_markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set commute": {
+      "main": [
+        [
+          {
+            "node": "Commute Guardian",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split in 4 items": {
+      "main": [
+        [
+          {
+            "node": "Append rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Everyday 7:30&18:15": {
+      "main": [
+        [
+          {
+            "node": "RERA",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RERB",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Metro1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "T10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RERA": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "RERB": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Commute Guardian": {
+      "main": [
+        [
+          {
+            "node": "to_discord_message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split in 4 items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "json_to_markdown": {
+      "main": [
+        [
+          {
+            "node": "Set commute",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "to_discord_message": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 120,
+    "errorWorkflow": "oaGEWAbViV34S8Ry"
+  },
+  "versionId": "2d496409-62c0-4f91-8e00-1c70188161a4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3cf4582185e2d6446b74ac642cd4f8b632c7e309ccad401283bece71e46aa8d9"
+  },
+  "id": "ohP606Q8KekpT1co",
+  "tags": []
+}

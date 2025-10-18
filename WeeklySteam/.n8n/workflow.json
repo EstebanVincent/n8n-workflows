@@ -1,0 +1,170 @@
+{
+  "name": "Bimonthly Steam Report",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "steamid",
+              "value": "76561198818732255"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        256,
+        0
+      ],
+      "id": "7351cd72-5c4a-4711-a2a9-3c4a602a9524",
+      "name": "Steam GetRecentlyPlayedGames",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "DJi9Pkoiv5NNbmVa",
+          "name": "store.steampowered.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1423405401269080247",
+          "mode": "list",
+          "cachedResultName": "n8n.nasvincent",
+          "cachedResultUrl": "https://discord.com/channels/1423405401269080247"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1424079622982729808",
+          "mode": "list",
+          "cachedResultName": "bimonthly-steam-report",
+          "cachedResultUrl": "https://discord.com/channels/1423405401269080247/1424079622982729808"
+        },
+        "content": "=",
+        "options": {},
+        "embeds": {
+          "values": [
+            {
+              "inputMethod": "=json",
+              "json": "={{ $json.embed.toJsonString() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        704,
+        0
+      ],
+      "id": "a69309f7-3a0a-485c-ae2b-9bc9a78019b1",
+      "name": "Send a message",
+      "webhookId": "38019bd7-f6a1-41a4-a3a9-e469f05b03d7",
+      "credentials": {
+        "discordBotApi": {
+          "id": "Ne07PmPTyVbZwaec",
+          "name": "n8n.nasvincent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 2,
+              "triggerAtDay": [
+                1
+              ]
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        32,
+        0
+      ],
+      "id": "1292d960-a12d-4e14-8aac-d8cd8187669a",
+      "name": "Bimontly"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "import json\nfrom datetime import datetime, timedelta\n\n\ndef minutes_to_hours(m: int | float) -> float:\n    \"\"\"Converts minutes to hours, rounded to one decimal place.\"\"\"\n    return round(m / 60.0, 1)\n\n\ndef to_discord_message(data: dict):\n    \"\"\"Creates a Discord message embed from Steam playtime data.\"\"\"\n    games = data.get(\"response\", {}).get(\"games\", [])\n    games.sort(key=lambda g: g.get(\"playtime_2weeks\", 0), reverse=True)\n    top = games[:5]\n\n    total_minutes = sum(g.get(\"playtime_2weeks\", 0) for g in games)\n    total_hours = minutes_to_hours(total_minutes)\n    unique_games = len(games)\n\n    today = datetime.now(ZoneInfo(\"Europe/Paris\")).date()\n    start_date = today - timedelta(days=14)\n    date_range = f\"{start_date.isoformat()} → {today.isoformat()}\"\n\n    medals = [\"🥇\", \"🥈\", \"🥉\"]\n    fields = []\n    for i, g in enumerate(top):\n        prefix = medals[i] if i < len(medals) else \"•\"\n        fields.append(\n            {\n                \"name\": f\"{prefix} {g.get('name', 'Unknown')}\",\n                \"value\": f\"**{minutes_to_hours(g.get('playtime_2weeks', 0))} h** in the last 2 weeks  ·  Lifetime: {minutes_to_hours(g.get('playtime_forever', 0))} h\",\n                \"inline\": False,\n            }\n        )\n\n    desc = (\n        (f\"**{total_hours} h** across **{unique_games}** game(s) in the last 2 weeks.\")\n        if unique_games\n        else \"No playtime recorded in the last 2 weeks.\"\n    )\n\n    embed = {\n        \"title\": \"🎮 Last 2 Weeks Steam Report\",\n        \"description\": desc,\n        \"color\": 3066993,\n        \"fields\": fields,\n        \"footer\": {\"text\": f\"Period: {date_range}\"},\n    }\n\n    return [{\"json\": {\"embed\": embed}}]\n\n\nif __name__ == \"__main__\":\n    from zoneinfo import ZoneInfo\n\n    import click\n\n    @click.command()\n    @click.option(\n        \"--json-path\",\n        type=click.Path(exists=True),\n        default=\"WeeklySteam/to_discord_message.json\",\n        help=\"Path to the JSON file containing the input data for the n8n node.\",\n    )\n    def main(json_path):\n        \"\"\"CLI for local testing of the create_embed script.\"\"\"\n        try:\n            with open(json_path, \"r\", encoding=\"utf-8\") as f:\n                data = json.load(f)\n        except json.JSONDecodeError:\n            print(f\"Error: Could not decode JSON from the file '{json_path}'.\")\n            return\n\n        result = to_discord_message(data)\n        print(json.dumps(result, indent=2))\n\n    main()  # pylint: disable=no-value-for-parameter\nelse:\n    import pyodide_js\n    await pyodide_js.loadPackage(\"tzdata\")\n    from zoneinfo import ZoneInfo\n\n    # In n8n, the script is not run as the main program, and _input is provided.\n    data = _input.first().json.to_py()  # pylint: disable=undefined-variable # type: ignore # noqa\n    return to_discord_message(data)\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "d7998608-f5a8-41bc-9eef-bced0e14cec0",
+      "name": "to_discord_message"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Steam GetRecentlyPlayedGames": {
+      "main": [
+        [
+          {
+            "node": "to_discord_message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bimontly": {
+      "main": [
+        [
+          {
+            "node": "Steam GetRecentlyPlayedGames",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "to_discord_message": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 30,
+    "errorWorkflow": "oaGEWAbViV34S8Ry"
+  },
+  "versionId": "01843e0e-77f6-46b9-97e6-502164745c54",
+  "meta": {
+    "instanceId": "3cf4582185e2d6446b74ac642cd4f8b632c7e309ccad401283bece71e46aa8d9"
+  },
+  "id": "Uz3Z3pxsx3gXul4l",
+  "tags": []
+}
