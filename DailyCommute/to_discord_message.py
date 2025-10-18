@@ -60,7 +60,7 @@ if __name__ == "__main__":
     @click.option(
         "--json-path",
         type=click.Path(exists=True),
-        default="DailyCommute/to_discord_message.json",
+        default="DailyCommute/inputs/to_discord_message.json",
         help="Path to the JSON file containing the input data for the n8n node.",
     )
     @click.option(

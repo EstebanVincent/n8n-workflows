@@ -105,7 +105,7 @@ if __name__ == "__main__":
     @click.option(
         "--json-path",
         type=click.Path(exists=True),
-        default="DailyCommute/json_to_markdown.json",
+        default="DailyCommute/inputs/json_to_markdown.json",
         help="Path to the JSON file containing the input data for the n8n node.",
     )
     def main(json_path):
