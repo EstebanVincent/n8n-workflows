@@ -1,5 +1,6 @@
 # n8n Code (Python Beta) — aggregate all inputs into one Markdown
 import html
+import json
 import re
 
 
@@ -30,6 +31,7 @@ def first(obj, *path, default=None):
 
 
 def line_title(payload: dict) -> str:
+    """Extracts a title for a transport line from the data payload."""
     # 1) Preferred: line_reports[0].line.name (as user noted)
     t = first(payload, "line_reports", 0, "line", "name")
     if t:
@@ -48,15 +50,13 @@ def line_title(payload: dict) -> str:
     return "Unknown line"
 
 
-sections = []
+def json_to_markdown(data: dict):
+    """Creates a Markdown report from a list of disruption data items."""
+    sections = []
 
-for item in _input.all():
-    root = item.json or {}
-    # New structure: everything is under an array at json["data"]
-    payloads = root.get("data")
-    for data in payloads:
-        title = line_title(data)
-        disruptions = data.get("disruptions") or []
+    for item in data["data"]:
+        title = line_title(item)
+        disruptions = item["disruptions"]
 
         sections.append(f"# {title}")
 
@@ -95,6 +95,33 @@ for item in _input.all():
             else:
                 sections.append("- **Messages:** -")
 
-# Join and return one item with the Markdown
-markdown = "\n".join(sections).strip()
-return [{"json": {"markdown": markdown}}]
+    return [{"json": {"markdown": "".join(sections)}}]
+
+
+if __name__ == "__main__":
+    import click
+
+    @click.command()
+    @click.option(
+        "--json-path",
+        type=click.Path(exists=True),
+        default="DailyCommute/json_to_markdown.json",
+        help="Path to the JSON file containing the input data for the n8n node.",
+    )
+    def main(json_path):
+        """CLI for local testing of the create_embed script."""
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except json.JSONDecodeError:
+            print(f"Error: Could not decode JSON from the file '{json_path}'.")
+            return
+
+        result = json_to_markdown(data)
+        print(json.dumps(result, indent=2))
+
+    main()  # pylint: disable=no-value-for-parameter
+else:
+    # In n8n, the script is not run as the main program, and _input is provided.
+    data = _input.first().json.to_py()  # pylint: disable=undefined-variable # type: ignore # noqa
+    # return json_to_markdown(data)

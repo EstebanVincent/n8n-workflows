@@ -1,0 +1,28 @@
+{
+  "output": {
+    "overall_severity": "log",
+    "overall_summary": "No disruptions.",
+    "line_reports": [
+      {
+        "line": "M1",
+        "severity": "log",
+        "summary": "Normal service"
+      },
+      {
+        "line": "RER A",
+        "severity": "log",
+        "summary": "Normal service"
+      },
+      {
+        "line": "RER B",
+        "severity": "log",
+        "summary": "Normal service"
+      },
+      {
+        "line": "T10",
+        "severity": "log",
+        "summary": "Normal service"
+      }
+    ]
+  }
+}
