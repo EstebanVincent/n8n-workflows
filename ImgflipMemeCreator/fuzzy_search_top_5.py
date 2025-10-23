@@ -52,7 +52,7 @@ def fuzzy_search_top_5(memes, query):
     # Sort by score in descending order and return top 5
     scored_memes.sort(key=lambda x: x[1], reverse=True)
 
-    return [meme_obj for meme_obj, score in scored_memes[:5]]
+    return {"data": [meme_obj for meme_obj, score in scored_memes[:5]]}
 
 
 if __name__ == "__main__":
