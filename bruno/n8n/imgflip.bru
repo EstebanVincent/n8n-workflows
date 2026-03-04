@@ -1,0 +1,26 @@
+meta {
+  name: /imgflip
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/imgflip
+  body: json
+  auth: inherit
+}
+
+headers {
+  apiKey: {{webhook_imgflip_key}}
+}
+
+body:json {
+  {
+      "query":"meme on bitcoin all time high today"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
