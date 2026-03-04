@@ -1,0 +1,23 @@
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "n8n-key",
+      "description": "n8n API Key",
+      "password": true
+    }
+  ],
+  "servers": {
+    "n8n-mcp": {
+      "command": "npx",
+      "args": ["n8n-mcp"],
+      "env": {
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error",
+        "DISABLE_CONSOLE_OUTPUT": "true",
+        "N8N_API_URL": "https://n8n.nasvincent.com",
+        "N8N_API_KEY": "${input:n8n-key}"
+      }
+    }
+  }
+}
