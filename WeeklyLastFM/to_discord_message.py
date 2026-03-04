@@ -203,10 +203,8 @@ if __name__ == "__main__":
 
     main()  # pylint: disable=no-value-for-parameter
 else:
-    # import pyodide_js
-    # await pyodide_js.loadPackage("tzdata")
+    # In n8n, the script is not run as the main program, and _items is provided.
     from zoneinfo import ZoneInfo
-
-    # In n8n, the script is not run as the main program, and _input is provided.
-    data = _input.first().json.to_py()  # pylint: disable=undefined-variable # type: ignore # noqa
+    
+    data = _items[0]["json"]  # pylint: disable=undefined-variable # type: ignore # noqa
     # return to_discord_message(data)
