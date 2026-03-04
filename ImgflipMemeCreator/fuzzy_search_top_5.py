@@ -89,7 +89,7 @@ if __name__ == "__main__":
     main()  # pylint: disable=no-value-for-parameter
 else:
     # In n8n, the script is not run as the main program, and _input is provided.
-    data = _input.first().json.data  # pylint: disable=undefined-variable # type: ignore # noqa
+    data = _items[0]["json"]["data"]  # pylint: disable=undefined-variable # type: ignore # noqa
 
     # The result of this script will be the output of the n8n node
     result = fuzzy_search_top_5(data[0].data, data[1].output.query)
