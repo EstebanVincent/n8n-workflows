@@ -1,0 +1,26 @@
+meta {
+  name: /github-pr
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/github-pr
+  body: json
+  auth: inherit
+}
+
+headers {
+  api-key: {{webhook_github_key}}
+}
+
+body:json {
+  {
+      "query":"meme on bitcoin all time high today"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
