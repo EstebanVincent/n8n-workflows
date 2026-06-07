@@ -1,0 +1,28 @@
+meta {
+  name: /mail-processor
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/mail-processor
+  body: json
+  auth: inherit
+}
+
+headers {
+  api-key: {{api_key}}
+}
+
+body:json {
+  {
+    "adresse": "paul.leroy@example.com",
+    "objet": "Renégociation de mon tarif",
+    "corps": "Bonjour, j ai reçu une offre concurrente moins chère. Je souhaiterais renégocier le tarif de mon contrat auto CTR-55678. Pouvez-vous me proposer un meilleur tarif ?"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
