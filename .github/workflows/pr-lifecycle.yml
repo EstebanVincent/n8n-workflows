@@ -1,0 +1,35 @@
+name: Notify n8n - PR lifecycle
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize, closed]
+
+jobs:
+  notify_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send PR payload to n8n webhook
+        env:
+          N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          curl -X POST "$N8N_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "api-key: $N8N_API_KEY" \
+            -d '{
+              "event_name": "pull_request",
+              "action": "${{ github.event.action }}",
+              "repository": "${{ github.repository }}",
+              "sender": "${{ github.actor }}",
+              "pr_number": "${{ github.event.pull_request.number }}",
+              "title": ${{ toJson(github.event.pull_request.title) }},
+              "url": ${{ toJson(github.event.pull_request.html_url) }},
+              "author": ${{ toJson(github.event.pull_request.user.login) }},
+              "base": ${{ toJson(github.event.pull_request.base.ref) }},
+              "head": ${{ toJson(github.event.pull_request.head.ref) }},
+              "draft": ${{ github.event.pull_request.draft }},
+              "merged": ${{ github.event.pull_request.merged }},
+              "created_at": ${{ toJson(github.event.pull_request.created_at) }},
+              "labels": ${{ toJson(github.event.pull_request.labels) }},
+              "requested_reviewers": ${{ toJson(github.event.pull_request.requested_reviewers) }}
+            }'
