@@ -4,17 +4,30 @@ This repository is for managing the workflows of my self-hosted n8n community ed
 
 ## Overview
 
--   **Host:** The n8n instance is running as a Docker image on a Raspberry Pi 4.
--   **Purpose:** This repository allows me to version my workflows, particularly the Python code nodes and prompts. It enables me to use a full-featured IDE for development instead of the n8n web-based editor.
+- **Host:** The n8n instance is running as a Docker image on a Raspberry Pi 4.
+- **Purpose:** This repository allows me to version my workflows, particularly the Python code nodes and prompts. It enables me to use a full-featured IDE for development instead of the n8n web-based editor.
+
+## GitHub Actions → n8n → Discord
+
+Four workflows in `.github/workflows/` send PR events to an n8n webhook, which forwards notifications to Discord:
+
+| Workflow                 | Trigger                                                     | Event sent                    |
+| ------------------------ | ----------------------------------------------------------- | ----------------------------- |
+| `pr-lifecycle.yml`       | PR opened, reopened, ready for review, synchronized, closed | `pull_request`                |
+| `pr-comments.yml`        | PR conversation comment created                             | `issue_comment`               |
+| `pr-reviews.yml`         | PR review submitted                                         | `pull_request_review`         |
+| `pr-inline-comments.yml` | Inline review comment created                               | `pull_request_review_comment` |
+
+Each workflow POSTs a JSON payload to `N8N_WEBHOOK_URL` (authenticated via `N8N_API_KEY`), both stored as GitHub Actions secrets.
 
 ## Repository Structure
 
 Each top-level folder in this repository corresponds to a specific n8n workflow. Inside each folder, you will find:
 
--   Python scripts used in **Code** nodes.
--   A `.n8n` sub-folder containing the workflow's JSON file.
--   Input examples (`.json` files) for testing Python scripts locally.
--   Prompts (`.md` files) for AI nodes.
+- Python scripts used in **Code** nodes.
+- A `.n8n` sub-folder containing the workflow's JSON file.
+- Input examples (`.json` files) for testing Python scripts locally.
+- Prompts (`.md` files) for AI nodes.
 
 ## Python Development Workflow
 
@@ -22,8 +35,8 @@ To facilitate both local development and execution within n8n, I use a system ba
 
 The core logic is wrapped in a function. The script then uses a conditional block:
 
--   `if __name__ == "__main__":`: This block is for local execution. It uses `click` to create a command-line interface, allowing me to pass arguments and test the script from my terminal.
--   `else:`: This block is for execution within the n8n environment. It retrieves data from the n8n `_input` variable and calls the core logic function. The final `return` statement, which passes the result back to the n8n workflow, is commented out during local development.
+- `if __name__ == "__main__":`: This block is for local execution. It uses `click` to create a command-line interface, allowing me to pass arguments and test the script from my terminal.
+- `else:`: This block is for execution within the n8n environment. It retrieves data from the n8n `_input` variable and calls the core logic function. The final `return` statement, which passes the result back to the n8n workflow, is commented out during local development.
 
 This setup allows for easy testing and development locally, and with a minor change (uncommenting one line), the code is ready for production in n8n.
 
