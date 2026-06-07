@@ -1,0 +1,26 @@
+[
+  {
+    "headers": {},
+    "params": {},
+    "query": {},
+    "body": {
+      "event_name": "pull_request",
+      "action": "closed",
+      "repository": "EstebanVincent/n8n-workflows",
+      "sender": "EstebanVincent",
+      "pr_number": "9",
+      "title": "Add Actions to notify n8n webhook",
+      "url": "https://github.com/EstebanVincent/n8n-workflows/pull/9",
+      "author": "EstebanVincent",
+      "base": "main",
+      "head": "test",
+      "draft": false,
+      "merged": true,
+      "created_at": "2026-06-07T15:01:02Z",
+      "labels": [],
+      "requested_reviewers": []
+    },
+    "webhookUrl": "",
+    "executionMode": "production"
+  }
+]
