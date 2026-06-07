@@ -1,0 +1,246 @@
+{
+  "name": "GithubPR",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "github-pr",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -688,
+        -48
+      ],
+      "id": "230e8d07-1be6-4780-becf-adc3a4497020",
+      "name": "Webhook",
+      "webhookId": "239f0bb1-f9c9-47b6-ab62-da3684159374",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "naMPl3Ow5sLj494X",
+          "name": "WEBHOOK_GITHUB_KEY"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1423405401269080247",
+          "mode": "list",
+          "cachedResultName": "n8n.nasvincent",
+          "cachedResultUrl": "https://discord.com/channels/1423405401269080247"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1513199226106937384",
+          "mode": "list",
+          "cachedResultName": "github-pr",
+          "cachedResultUrl": "https://discord.com/channels/1423405401269080247/1513199226106937384"
+        },
+        "content": "=",
+        "options": {},
+        "embeds": {
+          "values": [
+            {
+              "inputMethod": "=json",
+              "json": "={{ $json.embeds[0].toJsonString() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        416,
+        -64
+      ],
+      "id": "d1ca753d-142b-40ee-99b8-1ff44e1c64cf",
+      "name": "Send a message1",
+      "webhookId": "38019bd7-f6a1-41a4-a3a9-e469f05b03d7",
+      "credentials": {
+        "discordBotApi": {
+          "id": "Ne07PmPTyVbZwaec",
+          "name": "n8n.nasvincent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "output": "={{ $json.body.event_name === 'pull_request' ? 0 : $json.body.event_name === 'issue_comment' ? 1 : $json.body.event_name === 'pull_request_review_comment' ? 2 : 3 }}"
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -464,
+        -80
+      ],
+      "id": "fa5a5437-95bd-49a7-9923-290559d23af2",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.body || {};\n\nconst action = data.action || \"updated\";\nconst repository = data.repository || \"unknown/repo\";\nconst prNumber = data.pr_number || \"?\";\nconst title = data.title || \"Untitled PR\";\nconst url = data.url || \"\";\nconst author = data.author || data.sender || \"unknown\";\nconst base = data.base || \"main\";\nconst head = data.head || \"unknown\";\nconst isDraft = data.draft === true;\nconst merged = data.merged === true;\nconst labels = Array.isArray(data.labels) ? data.labels.map(l => typeof l === \"string\" ? l : l.name).filter(Boolean) : [];\nconst reviewers = Array.isArray(data.requested_reviewers) ? data.requested_reviewers.map(r => typeof r === \"string\" ? r : r.login).filter(Boolean) : [];\n\nconst statusMap = {\n  opened: { color: 3447003, label: \"🟢 PR opened\" },\n  reopened: { color: 10181046, label: \"🟡 PR reopened\" },\n  ready_for_review: { color: 5763719, label: \"👀 Ready for review\" },\n  synchronize: { color: 9807270, label: \"🔄 New commits pushed\" },\n  closed: { color: merged ? 5763719 : 15158332, label: merged ? \"🟣 PR merged\" : \"🔴 PR closed\" },\n};\n\nconst status = statusMap[action] || { color: 9807270, label: `ℹ️ ${action}` };\n\nconst fields = [\n  { name: \"Repository\", value: repository, inline: true },\n  { name: \"Author\", value: author, inline: true },\n  { name: \"PR\", value: `#${prNumber}`, inline: true },\n  { name: \"Branches\", value: `\\`${head}\\` → \\`${base}\\``, inline: false },\n  { name: \"Status\", value: isDraft ? `${status.label} • Draft` : status.label, inline: true },\n];\n\nif (labels.length) {\n  fields.push({ name: \"Labels\", value: labels.map(l => `\\`${l}\\``).join(\", \"), inline: false });\n}\n\nif (reviewers.length) {\n  fields.push({ name: \"Requested reviewers\", value: reviewers.map(r => `@${r}`).join(\", \"), inline: false });\n}\n\nreturn [{\n  json: {\n    embeds: [\n      {\n        title: `PR #${prNumber} — ${title}`,\n        url,\n        description: `**${status.label}** in **${repository}**`,\n        color: status.color,\n        fields,\n        footer: { text: \"n8n demo • GitHub PR lifecycle\" },\n        timestamp: new Date().toISOString()\n      }\n    ]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -448
+      ],
+      "id": "690ad6d8-16fb-430c-952a-62e69b3ecca3",
+      "name": "PR lifecycle"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.body || {};\n\nreturn [{\n  json: {\n    embeds: [\n      {\n        title: `💬 New PR comment on #${data.pr_number}`,\n        url: data.comment_url || data.url || \"\",\n        description: `**${data.sender || data.author || \"Someone\"}** commented on **${data.repository || \"unknown/repo\"}**`,\n        color: 16098851,\n        fields: [\n          { name: \"Title\", value: data.title || \"Untitled PR\", inline: false },\n          { name: \"Comment\", value: (data.comment_body || \"_No comment text_\").slice(0, 1000), inline: false }\n        ],\n        footer: { text: \"n8n demo • PR conversation comment\" },\n        timestamp: new Date().toISOString()\n      }\n    ]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -192
+      ],
+      "id": "8b9892f2-ab41-4df8-bdeb-39add3f6c2a1",
+      "name": "PR conversation comment"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.body || {};\n\nreturn [{\n  json: {\n    embeds: [\n      {\n        title: `🧵 Inline review comment on PR #${data.pr_number}`,\n        url: data.comment_url || data.url || \"\",\n        description: `**${data.sender || data.author || \"Someone\"}** left a code comment in **${data.repository || \"unknown/repo\"}**`,\n        color: 15548997,\n        fields: [\n          { name: \"Title\", value: data.title || \"Untitled PR\", inline: false },\n          { name: \"Comment\", value: (data.comment_body || \"_No comment text_\").slice(0, 1000), inline: false }\n        ],\n        footer: { text: \"n8n demo • Inline review comment\" },\n        timestamp: new Date().toISOString()\n      }\n    ]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        64
+      ],
+      "id": "41ce444e-e15a-4a89-8e3a-308902735287",
+      "name": "Inline review comment"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.body || {};\n\nconst reviewState = data.review_state || data.action || \"submitted\";\n\nconst reviewMap = {\n  approved: { color: 5763719, label: \"✅ Review approved\" },\n  changes_requested: { color: 15158332, label: \"❌ Changes requested\" },\n  commented: { color: 16098851, label: \"💬 Review submitted\" },\n};\n\nconst review = reviewMap[reviewState] || { color: 9807270, label: `ℹ️ Review ${reviewState}` };\n\nconst fields = [\n  { name: \"PR\", value: `#${data.pr_number || \"?\"}`, inline: true },\n  { name: \"Repository\", value: data.repository || \"unknown/repo\", inline: true },\n  { name: \"Reviewer\", value: data.author || data.sender || \"unknown\", inline: true },\n  { name: \"Title\", value: data.title || \"Untitled PR\", inline: false },\n  { name: \"Review state\", value: reviewState, inline: true }\n];\n\nif (data.comment_body) {\n  fields.push({ name: \"Review note\", value: data.comment_body.slice(0, 1000), inline: false });\n}\n\nreturn [{\n  json: {\n    embeds: [\n      {\n        title: `${review.label} on PR #${data.pr_number}`,\n        url: data.url || \"\",\n        description: `Review event in **${data.repository || \"unknown/repo\"}**`,\n        color: review.color,\n        fields,\n        footer: { text: \"n8n demo • PR review\" },\n        timestamp: new Date().toISOString()\n      }\n    ]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        304
+      ],
+      "id": "1a047dce-f8cb-4e9f-bb23-cf3d4b490c36",
+      "name": "Review submitted"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "PR lifecycle",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PR conversation comment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Inline review comment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Review submitted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PR lifecycle": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PR conversation comment": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inline review comment": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review submitted": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "oaGEWAbViV34S8Ry",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "0b38949d-d35c-454f-a31d-4e451981ac62",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3cf4582185e2d6446b74ac642cd4f8b632c7e309ccad401283bece71e46aa8d9"
+  },
+  "nodeGroups": [],
+  "id": "H62DskK1gz6cLZgO",
+  "tags": []
+}
